@@ -1,13 +1,16 @@
 import { defineAnimation } from 'react-native-reanimated';
-import type {
-  WithDecayConfig,
-  WithSpringConfig,
-} from 'react-native-reanimated';
 
 const MIN_VELOCITY = 80;
+const REST_DISPLACEMENT_THRESHOLD = 0.02;
+const REST_SPEED_THRESHOLD = 4;
+
+type DecaySpringConfig = {
+  velocity?: number;
+  clamp: [number, number];
+};
 
 export function withDecaySpring(
-  userConfig: WithDecayConfig & WithSpringConfig & { clamp: [number, number] },
+  userConfig: DecaySpringConfig,
   callback?: (finished?: boolean) => void
 ) {
   'worklet';
@@ -16,14 +19,10 @@ export function withDecaySpring(
     'worklet';
     const config = {
       deceleration: 0.997,
-      // SPRING CONFIG
       damping: 800,
       mass: 1,
       stiffness: 150,
-
       overshootClamping: false,
-      restDisplacementThreshold: 0.02,
-      restSpeedThreshold: 4,
       clamp: userConfig.clamp,
       velocity: userConfig.velocity,
     };
@@ -98,10 +97,10 @@ export function withDecaySpring(
             }
           };
 
-          const isVelocity = Math.abs(velocity) < config.restSpeedThreshold;
+          const isVelocity = Math.abs(velocity) < REST_SPEED_THRESHOLD;
           const isDisplacement =
             config.stiffness === 0 ||
-            Math.abs(toValue - current) < config.restDisplacementThreshold;
+            Math.abs(toValue - current) < REST_DISPLACEMENT_THRESHOLD;
 
           if (zeta < 1) {
             x = underDampedPosition;
